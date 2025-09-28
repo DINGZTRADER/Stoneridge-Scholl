@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getParents, saveParents, transformParentData } from '../services/dataService';
 import type { Parent, SortConfig, SortDirection } from '../types';
-import FileUpload from './shared/FileUpload';
+import ImportModal from './shared/FileUpload';
 import SortableTableHeader from './shared/SortableTableHeader';
-
-type ImportStatus = { message: string; type: 'success' | 'error' };
 
 const ParentManager: React.FC = () => {
     const [parents, setParents] = useState<Parent[]>([]);
-    const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState<SortConfig<Parent> | null>({ key: 'name', direction: 'ascending' });
     
@@ -17,37 +15,21 @@ const ParentManager: React.FC = () => {
     }, []);
 
     const handleParentImport = (data: any[]) => {
-        setImportStatus(null);
         try {
             const newParents = transformParentData(data);
             const existingParentIds = new Set(parents.map(p => p.id));
             const uniqueNewParents = newParents.filter(p => p.id && !existingParentIds.has(p.id));
-            
-            const duplicates = newParents.length - uniqueNewParents.length;
 
             if (uniqueNewParents.length > 0) {
                 const updatedParents = [...parents, ...uniqueNewParents];
                 setParents(updatedParents);
                 saveParents(updatedParents);
-                 setImportStatus({
-                    message: `Successfully imported ${uniqueNewParents.length} new parents. ${duplicates > 0 ? `${duplicates} duplicate(s) were ignored.` : ''}`,
-                    type: 'success'
-                });
-            } else {
-                 setImportStatus({
-                    message: `Import complete. No new parents were added. Found ${duplicates} duplicate(s).`,
-                    type: 'success'
-                });
             }
         } catch (err) {
-            handleImportError("The imported file structure is incorrect for parent data.");
+            console.error("Failed to transform parent data:", err);
         }
     };
     
-    const handleImportError = (message: string) => {
-        setImportStatus({ message, type: 'error' });
-    };
-
     const handleSort = (key: keyof Parent) => {
         let direction: SortDirection = 'ascending';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -88,17 +70,23 @@ const ParentManager: React.FC = () => {
 
     return (
         <div className="p-8 h-full overflow-y-auto bg-gray-50">
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onImportSuccess={handleParentImport}
+                expectedStructure="array"
+                title="Import Parent/Guardian Data"
+                description={
+                    <p>Upload a JSON file containing an array of parent records. The system will add new parents and ignore any duplicates.</p>
+                }
+            />
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-stoneridge-green">Parent/Guardian Management</h2>
-                    <FileUpload label="Import Parents" onFileUpload={handleParentImport} onError={handleImportError} />
+                    <button onClick={() => setIsImportModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-stoneridge-green hover:bg-green-800">
+                       Import Parents
+                    </button>
                 </div>
-                
-                {importStatus && (
-                    <div className={`p-4 mb-4 rounded-md text-sm ${importStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {importStatus.message}
-                    </div>
-                )}
 
                 <div className="mb-6">
                     <input

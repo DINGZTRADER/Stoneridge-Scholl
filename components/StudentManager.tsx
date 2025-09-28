@@ -3,7 +3,7 @@ import { getStudents, saveStudents, transformStudentData } from '../services/dat
 import { findStudentsWithAI } from '../services/geminiService';
 import type { Student, SortConfig, SortDirection } from '../types';
 import Spinner from './shared/Spinner';
-import FileUpload from './shared/FileUpload';
+import ImportModal from './shared/FileUpload';
 import StudentPerformanceCharts from './StudentPerformanceCharts';
 import SortableTableHeader from './shared/SortableTableHeader';
 
@@ -57,19 +57,17 @@ const AssignClassModal: React.FC<{
 
 type AiSearchResult = { studentId: string; reason: string };
 
-type ImportStatus = { message: string; type: 'success' | 'error' };
-
 const StudentManager: React.FC = () => {
     const [students, setStudents] = useState<Student[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState<SortConfig<Student> | null>({ key: 'name', direction: 'ascending' });
     const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [aiSearchResults, setAiSearchResults] = useState<AiSearchResult[] | null>(null);
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [aiSearchError, setAiSearchError] = useState<string | null>(null);
-    const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
-
+    
     const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
     
     useEffect(() => {
@@ -77,37 +75,21 @@ const StudentManager: React.FC = () => {
     }, []);
     
     const handleStudentImport = (data: any[]) => {
-        setImportStatus(null);
         try {
             const newStudents = transformStudentData(data);
             const existingStudentIds = new Set(students.map(s => s.id));
             const uniqueNewStudents = newStudents.filter(s => !existingStudentIds.has(s.id));
             
-            const duplicates = newStudents.length - uniqueNewStudents.length;
-
             if (uniqueNewStudents.length > 0) {
                 const updatedStudents = [...students, ...uniqueNewStudents];
                 setStudents(updatedStudents);
                 saveStudents(updatedStudents);
-                 setImportStatus({
-                    message: `Successfully imported ${uniqueNewStudents.length} new students. ${duplicates > 0 ? `${duplicates} duplicate(s) were ignored.` : ''}`,
-                    type: 'success'
-                });
-            } else {
-                 setImportStatus({
-                    message: `Import complete. No new students were added. Found ${duplicates} duplicate(s).`,
-                    type: 'success'
-                });
             }
         } catch (err) {
-            handleImportError("The imported file structure is incorrect for student data.");
+            console.error("Failed to transform student data:", err);
         }
     };
     
-    const handleImportError = (message: string) => {
-        setImportStatus({ message, type: 'error' });
-    };
-
     const handleSort = (key: keyof Student) => {
         let direction: SortDirection = 'ascending';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -231,17 +213,23 @@ const StudentManager: React.FC = () => {
                 onClose={() => setIsAssignModalOpen(false)}
                 onAssign={handleAssignClass}
             />
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onImportSuccess={handleStudentImport}
+                expectedStructure="array"
+                title="Import Student Data"
+                description={
+                    <p>Upload a JSON file containing an array of student records. The system will add new students and ignore any duplicates based on Student ID.</p>
+                }
+            />
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-stoneridge-green">Student Management</h2>
-                    <FileUpload label="Import Students" onFileUpload={handleStudentImport} onError={handleImportError} />
+                    <button onClick={() => setIsImportModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-stoneridge-green hover:bg-green-800">
+                        Import Students
+                    </button>
                 </div>
-
-                 {importStatus && (
-                    <div className={`p-4 mb-4 rounded-md text-sm ${importStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {importStatus.message}
-                    </div>
-                )}
 
                 <div className="mb-8">
                     <StudentPerformanceCharts students={students} />

@@ -6,6 +6,7 @@ import ChatWindow from './components/ChatWindow';
 import ToolContainer from './components/ToolContainer';
 import TaskManager from './components/TaskManager';
 import SchoolOpsDashboard from './components/SchoolOps/SchoolOpsDashboard';
+import ReportsGenerator from './components/ReportsGenerator';
 import StudentManager from './components/StudentManager';
 import TeacherManager from './components/TeacherManager';
 import StaffManager from './components/StaffManager';
@@ -71,6 +72,8 @@ const App: React.FC = () => {
           return <TaskManager />;
       case 'SchoolOps':
           return <SchoolOpsDashboard />;
+      case 'Reports':
+          return <ReportsGenerator />;
       case 'Students':
           return <StudentManager />;
       case 'Teachers':

@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getContractors, saveContractors, transformContractorData } from '../services/dataService';
 import type { Contractor, SortConfig, SortDirection } from '../types';
-import FileUpload from './shared/FileUpload';
+import ImportModal from './shared/FileUpload';
 import SortableTableHeader from './shared/SortableTableHeader';
-
-type ImportStatus = { message: string; type: 'success' | 'error' };
 
 const ContractorManager: React.FC = () => {
     const [contractors, setContractors] = useState<Contractor[]>([]);
-    const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState<SortConfig<Contractor> | null>({ key: 'name', direction: 'ascending' });
     
@@ -17,37 +15,21 @@ const ContractorManager: React.FC = () => {
     }, []);
 
     const handleContractorImport = (data: any[]) => {
-        setImportStatus(null);
         try {
             const newContractors = transformContractorData(data);
             const existingContractorIds = new Set(contractors.map(c => c.id));
             const uniqueNewContractors = newContractors.filter(c => c.id && !existingContractorIds.has(c.id));
-            
-            const duplicates = newContractors.length - uniqueNewContractors.length;
 
             if (uniqueNewContractors.length > 0) {
                 const updatedContractors = [...contractors, ...uniqueNewContractors];
                 setContractors(updatedContractors);
                 saveContractors(updatedContractors);
-                 setImportStatus({
-                    message: `Successfully imported ${uniqueNewContractors.length} new contractors. ${duplicates > 0 ? `${duplicates} duplicate(s) were ignored.` : ''}`,
-                    type: 'success'
-                });
-            } else {
-                 setImportStatus({
-                    message: `Import complete. No new contractors were added. Found ${duplicates} duplicate(s).`,
-                    type: 'success'
-                });
             }
         } catch (err) {
-            handleImportError("The imported file structure is incorrect for contractor data.");
+            console.error("Failed to transform contractor data:", err);
         }
     };
     
-    const handleImportError = (message: string) => {
-        setImportStatus({ message, type: 'error' });
-    };
-
     const handleSort = (key: keyof Contractor) => {
         let direction: SortDirection = 'ascending';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -85,17 +67,23 @@ const ContractorManager: React.FC = () => {
 
     return (
         <div className="p-8 h-full overflow-y-auto bg-gray-50">
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onImportSuccess={handleContractorImport}
+                expectedStructure="array"
+                title="Import Contractor Data"
+                description={
+                    <p>Upload a JSON file containing an array of contractor records. The system will add new contractors and ignore any duplicates.</p>
+                }
+            />
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-stoneridge-green">Contractor Management</h2>
-                    <FileUpload label="Import Contractors" onFileUpload={handleContractorImport} onError={handleImportError} />
+                    <button onClick={() => setIsImportModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-stoneridge-green hover:bg-green-800">
+                       Import Contractors
+                    </button>
                 </div>
-
-                {importStatus && (
-                    <div className={`p-4 mb-4 rounded-md text-sm ${importStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {importStatus.message}
-                    </div>
-                )}
                 
                 <div className="mb-6">
                     <input

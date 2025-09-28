@@ -1,8 +1,10 @@
 // This worker handles the parsing of large JSON files in a separate thread
 // to avoid blocking the main UI thread and keeping the application responsive.
 
-self.onmessage = (event: MessageEvent<File>) => {
-    const file = event.data;
+export type ExpectedStructure = 'array' | 'object_with_stoneridge_keys';
+
+self.onmessage = (event: MessageEvent<{ file: File, expectedStructure: ExpectedStructure }>) => {
+    const { file, expectedStructure } = event.data;
 
     const reader = new FileReader();
 
@@ -14,18 +16,22 @@ self.onmessage = (event: MessageEvent<File>) => {
             }
             const data = JSON.parse(text);
 
-            if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-                 throw new Error('Invalid JSON format. The file should contain an object with keys matching the data tables (e.g., "stoneridge-students").');
+            // Dynamic validation based on the expected structure
+            if (expectedStructure === 'array') {
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid JSON structure. Expected a file containing an array of records.');
+                }
+            } else if (expectedStructure === 'object_with_stoneridge_keys') {
+                if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+                     throw new Error('Invalid JSON structure. The backup file should contain an object with keys for each data table (e.g., "stoneridge-students").');
+                }
+                const validKeys = Object.keys(data).filter(key => key.startsWith('stoneridge-'));
+                if (validKeys.length === 0) {
+                     throw new Error('The JSON file does not contain any recognizable data tables. Keys must start with "stoneridge-".');
+                }
             }
             
-            // A simple validation to see if it looks like our data
-            const validKeys = Object.keys(data).filter(key => key.startsWith('stoneridge-'));
-            if (validKeys.length === 0) {
-                 throw new Error('The JSON file does not contain any recognizable data tables. Keys should start with "stoneridge-".');
-            }
-            
-            // The worker's job is just to parse. The main thread will save.
-            postMessage({ success: true, data: data, importedKeysCount: validKeys.length });
+            postMessage({ success: true, data });
 
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during parsing.';

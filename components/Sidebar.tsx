@@ -14,8 +14,8 @@ import UploadIcon from './icons/UploadIcon';
 import QuestionMarkCircleIcon from './icons/QuestionMarkCircleIcon';
 import ServerIcon from './icons/ServerIcon';
 import HomeIcon from './icons/HomeIcon';
-// Fix: Import ClipboardListIcon for the Task Manager nav item.
 import ClipboardListIcon from './icons/ClipboardListIcon';
+import ChartBarIcon from './icons/ChartBarIcon';
 
 export type View =
   | 'Home'
@@ -24,6 +24,7 @@ export type View =
   | 'AnnouncementCreator'
   | 'ActivityPlanner'
   | 'SchoolOps'
+  | 'Reports'
   | 'Students'
   | 'Teachers'
   | 'Staff'
@@ -32,7 +33,6 @@ export type View =
   | 'DataImport'
   | 'UserManual'
   | 'DeploymentGuide'
-  // Fix: Add 'TaskManager' to the View type to resolve the type error.
   | 'TaskManager';
 
 interface SidebarProps {
@@ -71,8 +71,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
         { id: 'Home', icon: <HomeIcon className="w-5 h-5" />, label: 'Home' },
         { id: 'Chat', icon: <ChatBubbleIcon className="w-5 h-5" />, label: 'Agent Chat' },
         { id: 'SchoolOps', icon: <RocketIcon className="w-5 h-5" />, label: 'School Operations' },
-        // Fix: Add a navigation item for the Task Manager.
         { id: 'TaskManager', icon: <ClipboardListIcon className="w-5 h-5" />, label: 'Task Manager' },
+    ],
+    analysis: [
+        { id: 'Reports', icon: <ChartBarIcon className="w-5 h-5" />, label: 'Reports' },
     ],
     aiTools: [
         { id: 'EmailDrafter', icon: <EnvelopeIcon className="w-5 h-5" />, label: 'Email Drafter' },
@@ -110,6 +112,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
       <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
         <SectionHeading label="Main" />
         {renderNavItems(navItems.main)}
+
+        <SectionHeading label="Analysis" />
+        {renderNavItems(navItems.analysis)}
 
         <SectionHeading label="AI Tools" />
         {renderNavItems(navItems.aiTools)}
