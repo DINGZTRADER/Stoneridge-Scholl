@@ -10,6 +10,7 @@ import type {
   TransportRoute,
   Broadcast,
 } from '../types';
+import { STORAGE_KEYS } from '../constants';
 
 // Helper for localStorage
 const getFromStorage = <T>(key: string, defaultValue: T): T => {
@@ -162,32 +163,32 @@ const createRoutes = (): TransportRoute[] => [
 const createBroadcasts = (): Broadcast[] => [];
 
 // Data Access Functions
-export const getStudents = (): Student[] => getFromStorage('stoneridge-students', STUDENT_DATA);
-export const saveStudents = (students: Student[]): void => saveToStorage('stoneridge-students', students);
+export const getStudents = (): Student[] => getFromStorage(STORAGE_KEYS.STUDENTS, STUDENT_DATA);
+export const saveStudents = (students: Student[]): void => saveToStorage(STORAGE_KEYS.STUDENTS, students);
 
-export const getTeachers = (): Teacher[] => getFromStorage('stoneridge-teachers', []);
-export const saveTeachers = (teachers: Teacher[]): void => saveToStorage('stoneridge-teachers', teachers);
+export const getTeachers = (): Teacher[] => getFromStorage(STORAGE_KEYS.TEACHERS, []);
+export const saveTeachers = (teachers: Teacher[]): void => saveToStorage(STORAGE_KEYS.TEACHERS, teachers);
 
-export const getStaff = (): Staff[] => getFromStorage('stoneridge-staff', []);
-export const saveStaff = (staff: Staff[]): void => saveToStorage('stoneridge-staff', staff);
+export const getStaff = (): Staff[] => getFromStorage(STORAGE_KEYS.STAFF, []);
+export const saveStaff = (staff: Staff[]): void => saveToStorage(STORAGE_KEYS.STAFF, staff);
 
-export const getParents = (): Parent[] => getFromStorage('stoneridge-parents', []);
-export const saveParents = (parents: Parent[]): void => saveToStorage('stoneridge-parents', parents);
+export const getParents = (): Parent[] => getFromStorage(STORAGE_KEYS.PARENTS, []);
+export const saveParents = (parents: Parent[]): void => saveToStorage(STORAGE_KEYS.PARENTS, parents);
 
-export const getContractors = (): Contractor[] => getFromStorage('stoneridge-contractors', []);
-export const saveContractors = (contractors: Contractor[]): void => saveToStorage('stoneridge-contractors', contractors);
+export const getContractors = (): Contractor[] => getFromStorage(STORAGE_KEYS.CONTRACTORS, []);
+export const saveContractors = (contractors: Contractor[]): void => saveToStorage(STORAGE_KEYS.CONTRACTORS, contractors);
 
-export const getApplications = (): Application[] => getFromStorage('stoneridge-applications', createApplications());
-export const saveApplications = (applications: Application[]): void => saveToStorage('stoneridge-applications', applications);
+export const getApplications = (): Application[] => getFromStorage(STORAGE_KEYS.APPLICATIONS, createApplications());
+export const saveApplications = (applications: Application[]): void => saveToStorage(STORAGE_KEYS.APPLICATIONS, applications);
 
-export const getInvoices = (): Invoice[] => getFromStorage('stoneridge-invoices', createInvoices());
-export const saveInvoices = (invoices: Invoice[]): void => saveToStorage('stoneridge-invoices', invoices);
+export const getInvoices = (): Invoice[] => getFromStorage(STORAGE_KEYS.INVOICES, createInvoices());
+export const saveInvoices = (invoices: Invoice[]): void => saveToStorage(STORAGE_KEYS.INVOICES, invoices);
 
-export const getAttendance = (): AttendanceRecord[] => getFromStorage('stoneridge-attendance', createAttendance());
-export const saveAttendance = (attendance: AttendanceRecord[]): void => saveToStorage('stoneridge-attendance', attendance);
+export const getAttendance = (): AttendanceRecord[] => getFromStorage(STORAGE_KEYS.ATTENDANCE, createAttendance());
+export const saveAttendance = (attendance: AttendanceRecord[]): void => saveToStorage(STORAGE_KEYS.ATTENDANCE, attendance);
 
-export const getRoutes = (): TransportRoute[] => getFromStorage('stoneridge-routes', createRoutes());
-export const saveRoutes = (routes: TransportRoute[]): void => saveToStorage('stoneridge-routes', routes);
+export const getRoutes = (): TransportRoute[] => getFromStorage(STORAGE_KEYS.ROUTES, createRoutes());
+export const saveRoutes = (routes: TransportRoute[]): void => saveToStorage(STORAGE_KEYS.ROUTES, routes);
 
-export const getBroadcasts = (): Broadcast[] => getFromStorage('stoneridge-broadcasts', createBroadcasts());
-export const saveBroadcasts = (broadcasts: Broadcast[]): void => saveToStorage('stoneridge-broadcasts', broadcasts);
+export const getBroadcasts = (): Broadcast[] => getFromStorage(STORAGE_KEYS.BROADCASTS, createBroadcasts());
+export const saveBroadcasts = (broadcasts: Broadcast[]): void => saveToStorage(STORAGE_KEYS.BROADCASTS, broadcasts);
