@@ -1,8 +1,13 @@
 // Fix: Implemented geminiService with Gemini API calls.
 import { GoogleGenAI, Chat, Type } from "@google/genai";
 import type { Student } from '../types';
+import { RateLimiter } from '../utils/validation';
+import { SCHOOL_NAME, SCHOOL_LOCATION, API_RATE_LIMIT, ERROR_MESSAGES } from '../constants';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+// Create a rate limiter for API calls
+const rateLimiter = new RateLimiter(API_RATE_LIMIT.MAX_CALLS, API_RATE_LIMIT.TIME_WINDOW_MS);
 
 let chat: Chat | null = null;
 
@@ -11,23 +16,35 @@ function getChatSession(): Chat {
     chat = ai.chats.create({
       model: 'gemini-2.5-flash',
       config: {
-        systemInstruction: `You are an administrative agent for The Stoneridge School, a private primary school in Uganda.
+        systemInstruction: `You are an administrative agent for ${SCHOOL_NAME}, a private primary school in ${SCHOOL_LOCATION}.
 Your role is to assist the school administration with various tasks.
 When interacting in a chat, be helpful, concise, and professional.
 When asked to generate content like emails or announcements, adopt the appropriate tone.
 You have access to school data, but do not mention that you are a language model or that you are accessing a database.
 Just provide the information or perform the task as requested.
 The current date is ${new Date().toDateString()}.
-The school's name is The Stoneridge School.
-The school's location is in Kampala, Uganda.`,
+The school's name is ${SCHOOL_NAME}.
+The school's location is ${SCHOOL_LOCATION}.`,
       },
     });
   }
   return chat;
 }
 
+/**
+ * Sends a message to the AI chat and returns the response
+ * @param message - The user's message to send to the AI
+ * @returns Promise resolving to the AI's response text
+ * @throws Error if rate limit is exceeded or if there's a connection issue
+ */
 export const sendMessageToChat = async (message: string): Promise<string> => {
+  // Check rate limit
+  if (!rateLimiter.canMakeCall()) {
+    throw new Error(ERROR_MESSAGES.RATE_LIMIT_EXCEEDED);
+  }
+
   try {
+    rateLimiter.recordCall();
     const chatSession = getChatSession();
     const response = await chatSession.sendMessage({ message });
     return response.text;
@@ -38,6 +55,11 @@ export const sendMessageToChat = async (message: string): Promise<string> => {
   }
 };
 
+/**
+ * Gets the appropriate system instruction based on the tool type
+ * @param tool - The type of content generation tool
+ * @returns The system instruction string for the AI model
+ */
 const getToolSystemInstruction = (tool: 'EmailDrafter' | 'AnnouncementCreator' | 'ActivityPlanner'): string => {
     switch(tool) {
         case 'EmailDrafter':
@@ -51,6 +73,13 @@ const getToolSystemInstruction = (tool: 'EmailDrafter' | 'AnnouncementCreator' |
     }
 }
 
+/**
+ * Generates content using AI based on the prompt and tool type
+ * @param prompt - The user's prompt describing what to generate
+ * @param tool - The type of tool/content to generate
+ * @returns Promise resolving to the generated content
+ * @throws Error if content generation fails
+ */
 export const generateContent = async (
   prompt: string,
   tool: 'EmailDrafter' | 'AnnouncementCreator' | 'ActivityPlanner'
@@ -72,6 +101,15 @@ export const generateContent = async (
 };
 
 
+/**
+ * Uses AI to search through student data based on a natural language query
+ * @param query - Natural language search query (e.g., "students with low attendance")
+ * @param students - Array of student objects to search through
+ * @returns Promise resolving to array of matching students with reasons
+ * @throws Error if AI search fails
+ * @example
+ * const results = await findStudentsWithAI("students in the debate club", students);
+ */
 export const findStudentsWithAI = async (
     query: string,
     students: Student[]
